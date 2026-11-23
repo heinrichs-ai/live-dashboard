@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Task Dashboard</title>
+  <style>
+    :root {
+      --primary: #174E35;
+      --primary-deep: #103926;
+      --primary-soft: #E8F1EC;
+      --accent: #C84B16;
+      --accent-soft: #FAEAE3;
+      --bg: #F6F7F5;
+      --surface: #FFFFFF;
+      --surface-alt: #F0F2EF;
+      --ink: #161B18;
+      --muted: #525D56;
+      --border: rgba(22, 27, 24, 0.13);
+      --ok: #15803D;
+      --ok-bg: #DCFCE7;
+      --warn: #B45309;
+      --warn-bg: #FEF3C7;
+      --bad: #B91C1C;
+      --bad-bg: #FEE2E2;
+      --info: #1D4ED8;
+      --info-bg: #DBEAFE;
+      --code-bg: #0D1117;
+      --code-ink: #D1D9E6;
+      --radius: 10px;
+    }
+
+    html[data-theme="dark"] {
+      --primary: #2563EB;
+      --primary-deep: #0F172A;
+      --primary-soft: rgba(59, 130, 246, 0.16);
+      --accent: #F59E0B;
+      --accent-soft: rgba(245, 158, 11, 0.16);
+      --bg: #0B0F17;
+      --surface: #121826;
+      --surface-alt: #172033;
+      --ink: #E6EDF7;
+      --muted: #8EA0BE;
+      --border: #23304A;
+      --ok: #4ADE80;
+      --ok-bg: rgba(34, 197, 94, 0.15);
+      --warn: #FBBF24;
+      --warn-bg: rgba(245, 158, 11, 0.15);
+      --bad: #F87171;
+      --bad-bg: rgba(239, 68, 68, 0.15);
+      --info: #93C5FD;
+      --info-bg: rgba(59, 130, 246, 0.16);
+      --code-bg: #070A10;
+      --code-ink: #CBD5E1;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .wrap {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--primary-deep);
+      color: #FFFFFF;
+      border-bottom: 3px solid var(--accent);
+      padding: 14px 0 16px;
+    }
+
+    .top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .title-group h1 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .subtitle {
+      margin: 2px 0 0;
+      font-size: 0.84rem;
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 5px 11px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #9CA3AF;
+    }
+
+    .dot.live {
+      background: #4ADE80;
+      box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.28);
+      animation: pulse 1.8s infinite;
+    }
+
+    .dot.complete {
+      background: #4ADE80;
+      animation: none;
+    }
+
+    .dot.offline {
+      background: #F87171;
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .theme-btn {
+      background: rgba(255, 255, 255, 0.12);
+      color: #FFFFFF;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .theme-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .progress-box {
+      margin-top: 12px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+    }
+
+    .progress-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    .phase-line {
+      font-size: 0.96rem;
+      font-weight: 700;
+    }
+
+    .now-line {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.84);
+      margin-bottom: 8px;
+    }
+
+    .clock-text {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.82rem;
+      color: rgba(255, 255, 255, 0.86);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .track {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.18);
+      overflow: hidden;
+    }
+
+    .fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), #22C55E);
+      transition: width 0.35s ease;
+    }
+
+    .stages-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .stage-pill {
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.11);
+      color: rgba(255, 255, 255, 0.72);
+    }
+
+    .stage-pill.done {
+      background: rgba(74, 222, 128, 0.22);
+      color: #DCFCE7;
+    }
+
+    .stage-pill.active {
+      background: var(--accent);
+      color: #FFFFFF;
+    }
+
+    .stage-pill.failed {
+      background: rgba(239, 68, 68, 0.32);
+      color: #FECACA;
+    }
+
+    main {
+      padding: 18px 0 48px;
+    }
+
+    .section {
+      margin-bottom: 20px;
+    }
+
+    .section[hidden] {
+      display: none;
+    }
+
+    .section-title {
+      margin: 0 0 10px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 13px 15px;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+
+    .metric-label {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .metric-val {
+      margin-top: 4px;
+      font-size: 1.35rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .metric-delta {
+      margin-top: 2px;
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .tone-good { color: var(--ok); }
+    .tone-warn { color: var(--warn); }
+    .tone-bad { color: var(--bad); }
+    .tone-neutral { color: var(--muted); }
+
+    .decisions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 10px;
+    }
+
+    .decision-id {
+      font-size: 0.74rem;
+      font-weight: 800;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .decision-val {
+      margin-top: 4px;
+      font-size: 0.88rem;
+    }
+
+    .items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 12px;
+    }
+
+    .item-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .item-name {
+      margin: 0;
+      font-size: 0.96rem;
+      font-weight: 800;
+    }
+
+    .item-owner {
+      margin-top: 2px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 9px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.73rem;
+      font-weight: 700;
+      background: var(--surface-alt);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .badge.running, .badge.active { background: var(--info-bg); color: var(--info); border-color: transparent; }
+    .badge.done, .badge.passed, .badge.approved, .badge.merged, .badge.complete, .badge.ok { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+    .badge.failed, .badge.error, .badge.blocked, .badge.changes_requested { background: var(--bad-bg); color: var(--bad); border-color: transparent; }
+    .badge.queued, .badge.pending, .badge.warn { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+
+    .item-prog {
+      margin-top: 8px;
+      height: 6px;
+      border-radius: 999px;
+      background: var(--surface-alt);
+      overflow: hidden;
+    }
+
+    .item-prog-fill {
+      height: 100%;
+      background: var(--primary);
+      transition: width 0.3s ease;
+    }
+
+    .item-detail {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--ink);
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1.25fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .two-col { grid-template-columns: 1fr; }
+    }
+
+    .gate-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .gate-row:last-child { border-bottom: none; }
+    .gate-label { font-size: 0.88rem; font-weight: 700; }
+    .gate-detail { font-size: 0.78rem; color: var(--muted); }
+
+    .feed-list {
+      max-height: 360px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .feed-item {
+      font-size: 0.84rem;
+      padding-bottom: 7px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      align-items: baseline;
+    }
+
+    .feed-item:last-child { border-bottom: none; }
+
+    .feed-ts {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.74rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .feed-actor {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--accent);
+      white-space: nowrap;
+    }
+
+    .feed-msg.level-ok { color: var(--ok); }
+    .feed-msg.level-warn { color: var(--warn); }
+    .feed-msg.level-error { color: var(--bad); }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+    th, td { border-bottom: 1px solid var(--border); padding: 7px 9px; text-align: left; }
+    th { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); background: var(--surface-alt); }
+
+    .logs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+      gap: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .logs-grid { grid-template-columns: 1fr; }
+    }
+
+    pre.log-box {
+      margin: 8px 0 0;
+      background: var(--code-bg);
+      color: var(--code-ink);
+      border-radius: 8px;
+      padding: 10px;
+      max-height: 240px;
+      overflow: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.74rem;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="top-bar">
+        <div class="title-group">
+          <h1 id="page-title">Live Task Dashboard</h1>
+          <p id="page-subtitle" class="subtitle"></p>
+        </div>
+        <div class="top-controls">
+          <span class="pill-live">
+            <span id="sse-dot" class="dot"></span>
+            <span id="sse-label">Connecting...</span>
+          </span>
+          <button id="theme-btn" class="theme-btn" type="button">Dark mode</button>
+        </div>
+      </div>
+
+      <div class="progress-box">
+        <div class="progress-top">
+          <span id="phase-text" class="phase-line">Loading...</span>
+          <span id="clock-text" class="clock-text">0% | Elapsed 0s</span>
+        </div>
+        <div id="now-text" class="now-line"></div>
+        <div class="track">
+          <div id="progress-fill" class="fill"></div>
+        </div>
+        <div id="stages-row" class="stages-row"></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="metrics-sec" class="section" hidden>
+      <h2 class="section-title">Key Metrics</h2>
+      <div id="metrics-grid" class="metrics-grid"></div>
+    </section>
+
+    <section id="decisions-sec" class="section" hidden>
+      <h2 class="section-title">Decisions &amp; Scope</h2>
+      <div id="decisions-grid" class="decisions-grid"></div>
+    </section>
+
+    <section id="items-sec" class="section" hidden>
+      <h2 class="section-title">Active Workstreams</h2>
+      <div id="items-grid" class="items-grid"></div>
+    </section>
+
+    <section id="results-sec" class="section" hidden>
+      <h2 class="section-title">Results</h2>
+      <div class="card table-wrap">
+        <table>
+          <thead id="results-head"></thead>
+          <tbody id="results-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div id="bottom-grid" class="two-col section">
+      <section id="gates-sec" hidden>
+        <h2 class="section-title">Quality Gates</h2>
+        <div id="gates-card" class="card"></div>
+      </section>
+      <section id="feed-sec">
+        <h2 class="section-title">Live Activity Feed</h2>
+        <div id="feed-card" class="card feed-list"></div>
+      </section>
+    </div>
+
+    <section id="logs-sec" class="section" hidden>
+      <h2 class="section-title">Live Log Tails</h2>
+      <div id="logs-grid" class="logs-grid"></div>
+    </section>
+  </main>
+
+  <script>
+    const els = {
+      title: document.getElementById("page-title"),
+      subtitle: document.getElementById("page-subtitle"),
+      dot: document.getElementById("sse-dot"),
+      sseLabel: document.getElementById("sse-label"),
+      themeBtn: document.getElementById("theme-btn"),
+      phase: document.getElementById("phase-text"),
+      now: document.getElementById("now-text"),
+      clock: document.getElementById("clock-text"),
+      fill: document.getElementById("progress-fill"),
+      stages: document.getElementById("stages-row"),
+      metricsSec: document.getElementById("metrics-sec"),
+      metricsGrid: document.getElementById("metrics-grid"),
+      decisionsSec: document.getElementById("decisions-sec"),
+      decisionsGrid: document.getElementById("decisions-grid"),
+      itemsSec: document.getElementById("items-sec"),
+      itemsGrid: document.getElementById("items-grid"),
+      resultsSec: document.getElementById("results-sec"),
+      resultsHead: document.getElementById("results-head"),
+      resultsBody: document.getElementById("results-body"),
+      bottomGrid: document.getElementById("bottom-grid"),
+      gatesSec: document.getElementById("gates-sec"),
+      gatesCard: document.getElementById("gates-card"),
+      feedCard: document.getElementById("feed-card"),
+      logsSec: document.getElementById("logs-sec"),
+      logsGrid: document.getElementById("logs-grid"),
+    };
+
+    let userThemeOverride = null;
+    let currentState = {};
+
+    function applyTheme(theme) {
+      const resolved = userThemeOverride || theme || "light";
+      document.documentElement.setAttribute("data-theme", resolved);
+      els.themeBtn.textContent = resolved === "dark" ? "Light mode" : "Dark mode";
+    }
+
+    els.themeBtn.addEventListener("click", () => {
+      const cur = document.documentElement.getAttribute("data-theme") || "light";
+      userThemeOverride = cur === "dark" ? "light" : "dark";
+      applyTheme(userThemeOverride);
+    });
+
+    function formatDuration(ms) {
+      const sec = Math.max(0, Math.floor(ms / 1000));
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      const s = sec % 60;
+      if (h > 0) return `${h}h ${m}m ${s}s`;
+      if (m > 0) return `${m}m ${s}s`;
+      return `${s}s`;
+    }
+
+    function updateClock() {
+      const st = currentState || {};
+      const pct = Number(st.overallPercent || 0);
+      const startMs = st.startedAt ? Date.parse(st.startedAt) : null;
+      const endMs = st.completedAt ? Date.parse(st.completedAt) : Date.now();
+      const elapsed = startMs ? formatDuration(endMs - startMs) : "0s";
+      const upd = st.updatedAt ? new Date(st.updatedAt).toLocaleTimeString() : "";
+      const tag = st.completedAt ? "Total" : "Elapsed";
+      els.clock.textContent = `${pct}% | ${tag} ${elapsed}${upd ? " | Updated " + upd : ""}`;
+    }
+
+    function makeBadge(text, statusClass) {
+      const span = document.createElement("span");
+      span.className = `badge ${String(statusClass || "pending").toLowerCase()}`;
+      span.textContent = text;
+      return span;
+    }
+
+    function render(payload) {
+      const st = payload.state || {};
+      const events = payload.events || [];
+      const logTails = payload.logTails || {};
+      currentState = st;
+
+      applyTheme(st.theme);
+      if (st.brand && st.brand.primary) {
+        document.documentElement.style.setProperty("--primary", st.brand.primary);
+        document.documentElement.style.setProperty("--primary-deep", st.brand.primary);
+      }
+      if (st.brand && st.brand.accent) {
+        document.documentElement.style.setProperty("--accent", st.brand.accent);
+      }
+
+      document.title = st.title || "Live Task Dashboard";
+      els.title.textContent = st.title || "Live Task Dashboard";
+      els.subtitle.textContent = st.subtitle || "";
+      els.phase.textContent = st.phase || "Working";
+      els.now.textContent = st.now || "";
+      els.fill.style.width = `${Math.max(0, Math.min(100, Number(st.overallPercent || 0)))}%`;
+
+      if (st.status === "complete") {
+        els.dot.className = "dot complete";
+        els.sseLabel.textContent = "Complete";
+      } else if (st.status === "failed") {
+        els.dot.className = "dot offline";
+        els.sseLabel.textContent = "Failed";
+      } else {
+        els.dot.className = "dot live";
+        els.sseLabel.textContent = "Live";
+      }
+
+      updateClock();
+
+      // Stages
+      els.stages.replaceChildren();
+      for (const s of st.stages || []) {
+        const pill = document.createElement("span");
+        pill.className = `stage-pill ${String(s.status || "pending").toLowerCase()}`;
+        pill.textContent = s.label || s.id;
+        els.stages.append(pill);
+      }
+
+      // Metrics
+      const metrics = st.metrics || [];
+      els.metricsSec.hidden = metrics.length === 0;
+      els.metricsGrid.replaceChildren();
+      for (const m of metrics) {
+        const card = document.createElement("div");
+        card.className = "card";
+        const lbl = document.createElement("div");
+        lbl.className = "metric-label";
+        lbl.textContent = m.label || m.id;
+        const val = document.createElement("div");
+        val.className = "metric-val";
+        val.textContent = String(m.value ?? "");
+        card.append(lbl, val);
+        if (m.delta) {
+          const d = document.createElement("div");
+          d.className = `metric-delta tone-${m.tone || "neutral"}`;
+          d.textContent = m.delta;
+          card.append(d);
+        }
+        els.metricsGrid.append(card);
+      }
+
+      // Decisions
+      const decisions = st.decisions || [];
+      els.decisionsSec.hidden = decisions.length === 0;
+      els.decisionsGrid.replaceChildren();
+      for (const dec of decisions) {
+        const card = document.createElement("div");
+        card.className = "card";
+        const idEl = document.createElement("div");
+        idEl.className = "decision-id";
+        idEl.textContent = `${dec.id}: ${dec.label}`;
+        const valEl = document.createElement("div");
+        valEl.className = "decision-val";
+        valEl.textContent = dec.value || "";
+        card.append(idEl, valEl);
+        els.decisionsGrid.append(card);
+      }
+
+      // Items / Workstreams
+      const items = st.items || [];
+      els.itemsSec.hidden = items.length === 0;
+      els.itemsGrid.replaceChildren();
+      for (const item of items) {
+        const card = document.createElement("article");
+        card.className = "card";
+
+        const head = document.createElement("div");
+        head.className = "item-head";
+        const left = document.createElement("div");
+        const h3 = document.createElement("h3");
+        h3.className = "item-name";
+        h3.textContent = item.name || item.id;
+        left.append(h3);
+        if (item.owner) {
+          const ow = document.createElement("div");
+          ow.className = "item-owner";
+          ow.textContent = item.owner;
+          left.append(ow);
+        }
+        head.append(left, makeBadge(item.status || "queued", item.status));
+        card.append(head);
+
+        const badgeEntries = Object.entries(item.badges || {});
+        if (badgeEntries.length > 0) {
+          const bRow = document.createElement("div");
+          bRow.className = "badges";
+          for (const [k, v] of badgeEntries) {
+            bRow.append(makeBadge(`${k}: ${v}`, v));
+          }
+          card.append(bRow);
+        }
+
+        if (typeof item.progress === "number") {
+          const pWrap = document.createElement("div");
+          pWrap.className = "item-prog";
+          const pFill = document.createElement("div");
+          pFill.className = "item-prog-fill";
+          pFill.style.width = `${Math.max(0, Math.min(100, item.progress))}%`;
+          pWrap.append(pFill);
+          card.append(pWrap);
+        }
+
+        if (item.detail) {
+          const det = document.createElement("div");
+          det.className = "item-detail";
+          det.textContent = item.detail;
+          card.append(det);
+        }
+
+        const itemLog = logTails[`item:${item.id}`];
+        if (itemLog && itemLog.text) {
+          const pre = document.createElement("pre");
+          pre.className = "log-box";
+          pre.textContent = itemLog.text;
+          card.append(pre);
+        }
+
+        els.itemsGrid.append(card);
+      }
+
+      // Results table
+      const results = st.results || [];
+      const cols = (st.resultsColumns && st.resultsColumns.length > 0)
+        ? st.resultsColumns
+        : (results.length > 0 ? Object.keys(results[0]) : []);
+      els.resultsSec.hidden = results.length === 0;
+      els.resultsHead.replaceChildren();
+      els.resultsBody.replaceChildren();
+      if (results.length > 0) {
+        const trH = document.createElement("tr");
+        for (const c of cols) {
+          const th = document.createElement("th");
+          th.textContent = c;
+          trH.append(th);
+        }
+        els.resultsHead.append(trH);
+        for (const row of results) {
+          const tr = document.createElement("tr");
+          for (const c of cols) {
+            const td = document.createElement("td");
+            td.textContent = row[c] === undefined || row[c] === null ? "" : String(row[c]);
+            tr.append(td);
+          }
+          els.resultsBody.append(tr);
+        }
+      }
+
+      // Gates
+      const gates = st.gates || [];
+      els.gatesSec.hidden = gates.length === 0;
+      els.bottomGrid.style.gridTemplateColumns = gates.length === 0 ? "1fr" : "";
+      els.gatesCard.replaceChildren();
+      for (const g of gates) {
+        const row = document.createElement("div");
+        row.className = "gate-row";
+        const info = document.createElement("div");
+        const lbl = document.createElement("div");
+        lbl.className = "gate-label";
+        lbl.textContent = g.label || g.id;
+        info.append(lbl);
+        if (g.detail) {
+          const det = document.createElement("div");
+          det.className = "gate-detail";
+          det.textContent = g.detail;
+          info.append(det);
+        }
+        row.append(info, makeBadge(g.status || "pending", g.status));
+        els.gatesCard.append(row);
+      }
+
+      // Activity feed (newest first)
+      els.feedCard.replaceChildren();
+      const reversed = [...events].reverse();
+      for (const ev of reversed) {
+        const row = document.createElement("div");
+        row.className = "feed-item";
+        const ts = document.createElement("span");
+        ts.className = "feed-ts";
+        ts.textContent = ev.ts ? new Date(ev.ts).toLocaleTimeString() : "";
+        row.append(ts);
+        if (ev.actor) {
+          const act = document.createElement("span");
+          act.className = "feed-actor";
+          act.textContent = `[${ev.actor}]`;
+          row.append(act);
+        }
+        const msg = document.createElement("span");
+        msg.className = `feed-msg level-${ev.level || "info"}`;
+        msg.textContent = ev.msg || "";
+        row.append(msg);
+        els.feedCard.append(row);
+      }
+
+      // Standalone log files
+      const standaloneLogs = Object.values(logTails).filter((l) => !l.id.startsWith("item:"));
+      els.logsSec.hidden = standaloneLogs.length === 0;
+      els.logsGrid.replaceChildren();
+      for (const l of standaloneLogs) {
+        const card = document.createElement("div");
+        card.className = "card";
+        const head = document.createElement("div");
+        head.className = "item-head";
+        const h3 = document.createElement("h3");
+        h3.className = "item-name";
+        h3.textContent = l.label || l.id;
+        const mtime = document.createElement("span");
+        mtime.className = "item-owner";
+        mtime.textContent = l.mtimeIso ? `Updated ${new Date(l.mtimeIso).toLocaleTimeString()}` : "";
+        head.append(h3, mtime);
+        const pre = document.createElement("pre");
+        pre.className = "log-box";
+        pre.textContent = l.text || "Waiting for log output...";
+        card.append(head, pre);
+        els.logsGrid.append(card);
+      }
+    }
+
+    function connect() {
+      const es = new EventSource("/api/stream");
+      es.onmessage = (ev) => {
+        try {
+          render(JSON.parse(ev.data));
+        } catch {
+          // Ignore malformed frame
+        }
+      };
+      es.onerror = () => {
+        els.dot.className = "dot offline";
+        els.sseLabel.textContent = "Reconnecting...";
+      };
+    }
+
+    setInterval(updateClock, 1000);
+    connect();
+  </script>
+</body>
+</html>
